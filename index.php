@@ -1,9 +1,10 @@
 <?php
 
-// set max execution time to 10min (default: 30s) to avoid timing out when spell-checking Alice in Wonderland via linear search
-// (spell-checking Alice in Wonderland via linear search usually takes around four minutes)
+// set max execution time to 10min (default is 30s) to avoid timing out when spell-checking Alice in Wonderland via linear search
+// (spell-checking Alice in Wonderland via linear search usually takes around four minutes, so 10 minutes is more than enough time)
 set_time_limit(600);
 
+// function for converting a file to an array
 function fileToArray($file) {
   // Read file as a string
   $fileRef = fopen($file, "r");
@@ -43,60 +44,55 @@ function binarySearch($anArray, $item) {
   return -1;
 }
 
-// set global output variable
+// set global word and output variables
+$word = '';
 $output = '';
 
 // form action
 if (isset($_POST['mode'])) {
   // mode: check if word is in dictionary (linear)
   if ($_POST['mode'] == 'wordCheckLinear' && trim(strtolower($_POST['word'])) != '') {
-    // convert word to lowercase and trim it
+    // convert word to lowercase, trim it, and store it
     $word = trim(strtolower($_POST['word']));
 
     // get current time before search starts
     $t1 = gettimeofday(true);
 
-    // search for word
-    if (linearSearch($dictionary, $word) >= 0) {
-      // if search is successful:
-      // subtract initial time from current time to get search time
-      $timeElapsed = gettimeofday(true) - $t1;
+    // search for word and store the returned index
+    $index = linearSearch($dictionary, $word);
 
-      // set output
-      $output = "'$word' was found in the dictionary. Search time: $timeElapsed seconds via linear search";
+    // subtract initial time from current time to get search time
+    $timeElapsed = gettimeofday(true) - $t1;
+
+    if ($index == -1) {
+      // search is unsuccessful
+      $output = "'$word' was not found in the dictionary <br> Search time: $timeElapsed seconds via linear search";
     } else {
-      // if search is unsuccessful:
-      // subtract initial time from current time to get search time
-      $timeElapsed = gettimeofday(true) - $t1;
-
-      // set output
-      $output = "'$word' was not found in the dictionary. Search time: $timeElapsed seconds via linear search";
+      // search is successful
+      $output = "'$word' was found in the dictionary at position $index <br> Search time: $timeElapsed seconds via linear search";
     }
   }
 
   // mode: check if word is in dictionary (binary)
   if ($_POST['mode'] == 'wordCheckBinary' && trim(strtolower($_POST['word'])) != '') {
-    // convert word to lowercase and trim it
+    // convert word to lowercase, trim it, and store it
     $word = trim(strtolower($_POST['word']));
 
     // get current time before search starts
     $t1 = gettimeofday(true);
 
-    // search for word
-    if (binarySearch($dictionary, $word) >= 0) {
-      // if search is successful:
-      // subtract initial time from current time to get search time
-      $timeElapsed = gettimeofday(true) - $t1;
+    // search for word and store the returned index
+    $index = binarySearch($dictionary, $word);
 
-      // set output
-      $output = "'$word' was found in the dictionary. Search time: $timeElapsed seconds via binary search";
+    // subtract initial time from current time to get search time
+    $timeElapsed = gettimeofday(true) - $t1;
+
+    if ($index == -1) {
+      // search is unsuccessful
+      $output = "'$word' was not found in the dictionary <br> Search time: $timeElapsed seconds via binary search";
     } else {
-      // if search is unsuccessful:
-      // subtract initial time from current time to get search time
-      $timeElapsed = gettimeofday(true) - $t1;
-
-      // set output
-      $output = "'$word' was not found in the dictionary. Search time: $timeElapsed seconds via binary search";
+      // search is successful
+      $output = "'$word' was found in the dictionary at position $index <br> Search time: $timeElapsed seconds via binary search";
     }
   }
 
@@ -109,18 +105,18 @@ if (isset($_POST['mode'])) {
     $t1 = gettimeofday(true);
 
     // set each word to lowercase and spell-check it
-    foreach ($aliceWords as $aliceWord) {
-      if (linearSearch($dictionary, strtolower($aliceWord)) == -1) {
-        // if word is not found in dictionary, update the number of misspelled words
+    foreach ($aliceWords as $word) {
+      if (linearSearch($dictionary, strtolower($word)) == -1) {
+        // word is not found in dictionary: update the number of misspelled words
         $misspelledWords++;
       }
     }
 
-    // subtract initial time from current time to get search time
+    // subtract initial time from current time to get spell-check time
     $timeElapsed = gettimeofday(true) - $t1;
 
     // set output
-    $output = "Number of misspelled words: $misspelledWords. Spell-check time: $timeElapsed seconds via linear search";;
+    $output = "Number of misspelled words: $misspelledWords <br> Spell-check time: $timeElapsed seconds via linear search";;
   }
 
   // mode: spell check Alice in Wonderland (binary)
@@ -132,18 +128,18 @@ if (isset($_POST['mode'])) {
     $t1 = gettimeofday(true);
 
     // set each word to lowercase and spell-check it
-    foreach ($aliceWords as $aliceWord) {
-      if (binarySearch($dictionary, strtolower($aliceWord)) == -1) {
-        // if word is not found in dictionary, update the number of misspelled words
+    foreach ($aliceWords as $word) {
+      if (binarySearch($dictionary, strtolower($word)) == -1) {
+        // word is not found in dictionary: update the number of misspelled words
         $misspelledWords++;
       }
     }
 
-    // subtract initial time from current time to get search time
+    // subtract initial time from current time to get spell-check time
     $timeElapsed = gettimeofday(true) - $t1;
 
     // set output
-    $output = "Number of misspelled words: $misspelledWords. Spell-check time: $timeElapsed seconds via binary search";
+    $output = "Number of misspelled words: $misspelledWords <br> Spell-check time: $timeElapsed seconds via binary search";
   }
 }
 
@@ -158,18 +154,24 @@ if (isset($_POST['mode'])) {
 
 <body>
   <h1>Spell Check</h1>
+
   <hr>
+
+  <!-- simple form to choose mode and input word if applicable -->
   <form action="index.php" method="post">
     <select name="mode">
-      <option value="wordCheckLinear">Check if a word is in dictionary (linear)</option>
-      <option value="wordCheckBinary">Check if a word is in dictionary (binary)</option>
-      <option value="aliceInWonderlandCheckLinear">Spell-check Alice in Wonderland (linear) - WARNING: takes around 4 minutes</option>
-      <option value="aliceInWonderlandCheckBinary">Spell-check Alice in Wonderland (binary)</option>
+      <option value="wordCheckLinear" <?php if (isset($_POST['mode']) && $_POST['mode'] == 'wordCheckLinear') { ?> selected <?php } ?>>Check if a word is in dictionary (linear)</option>
+      <option value="wordCheckBinary" <?php if (isset($_POST['mode']) && $_POST['mode'] == 'wordCheckBinary') { ?> selected <?php } ?>>Check if a word is in dictionary (binary)</option>
+      <option value="aliceInWonderlandCheckLinear" <?php if (isset($_POST['mode']) && $_POST['mode'] == 'aliceInWonderlandCheckLinear') { ?> selected <?php } ?>>Spell-check Alice in Wonderland (linear) - WARNING: takes around 4 minutes</option>
+      <option value="aliceInWonderlandCheckBinary" <?php if (isset($_POST['mode']) && $_POST['mode'] == 'aliceInWonderlandCheckBinary') { ?> selected <?php } ?>>Spell-check Alice in Wonderland (binary)</option>
     </select>
-    <p><input type="text" name="word" placeholder="Enter word to check here"></p>
+    <p><input type="text" name="word" value="<?php if (isset($_POST['word']) && $_POST['word'] != '') { echo(htmlspecialchars($word)); } ?>" placeholder="Enter word to check here"></p>
     <p><input type="submit" value="Submit"></p>
   </form>
+
   <hr>
+
+  <!-- output field for result -->
   <h2><?= $output ?></h2>
 </body>
 
